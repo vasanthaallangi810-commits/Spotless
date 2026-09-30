@@ -13,9 +13,7 @@ class MainScreen extends StatefulWidget {
       _MainScreenState();
 }
 
-class _MainScreenState
-    extends State<MainScreen> {
-
+class _MainScreenState extends State<MainScreen> {
   int currentIndex = 0;
 
   final pages = const [
@@ -28,16 +26,13 @@ class _MainScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       body: AnimatedSwitcher(
-        duration:
-            const Duration(milliseconds: 450),
-        transitionBuilder:
-            (child, animation) {
+        duration: const Duration(milliseconds: 450),
+        transitionBuilder: (child, animation) {
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
               position: Tween<Offset>(
-                begin:
-                    const Offset(.08, 0),
+                begin: const Offset(.08, 0),
                 end: Offset.zero,
               ).animate(animation),
               child: child,
@@ -50,17 +45,34 @@ class _MainScreenState
         ),
       ),
 
-      bottomNavigationBar:
-          NavigationBar(
-        backgroundColor:
-            AppTheme.darkGreen,
-        indicatorColor:
-            AppTheme.mossGreen,
-        selectedIndex:
-            currentIndex,
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: AppTheme.darkGreen,
 
-        onDestinationSelected:
-            (index) {
+        // Green highlight behind selected item
+        indicatorColor: AppTheme.mossGreen,
+
+        selectedIndex: currentIndex,
+
+        // ⭐ THIS MAKES THE LABELS VISIBLE
+        labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
+          (states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                color: AppTheme.darkGreen,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              );
+            }
+
+            return const TextStyle(
+              color: AppTheme.beige,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            );
+          },
+        ),
+
+        onDestinationSelected: (index) {
           setState(() {
             currentIndex = index;
           });

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_data.dart';
-import '../database/database_helper.dart';
 import '../theme/app_theme.dart';
 import '../widgets/spotless_background.dart';
 import 'main_screen.dart';
+import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
 
   bool obscurePassword = true;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -53,41 +54,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    setState(() {
+      isLoading = true;
+    });
+
     try {
-      // Check duplicate email
-      final exists = await DatabaseHelper.instance.emailExists(email);
-
-      if (exists) {
-        _showMessage(
-          'An account with this email already exists.',
-        );
-        return;
-      }
-
-      // Save user to SQLite
-      await DatabaseHelper.instance.registerUser(
+      // Send user data to Node.js → MySQL
+      final result = await ApiService.registerUser(
         name: name,
         email: email,
         password: password,
       );
 
-      // Set current user
-      AppData.userName = name;
-
-      _showMessage('Account created successfully! 🌱');
-
       if (!mounted) return;
 
-      // Go to main screen
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const MainScreen(),
-        ),
-        (route) => false,
-      );
+      if (result['success'] == true) {
+        // Save current user's name in the app
+        AppData.userName = name;
+
+        _showMessage('Account created successfully! 🌱');
+
+        // Go to main screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MainScreen(),
+          ),
+          (route) => false,
+        );
+      } else {
+        _showMessage(
+          result['message'] ?? 'Registration failed.',
+        );
+      }
     } catch (e) {
-      _showMessage('Registration failed: $e');
+      _showMessage(
+        'Could not connect to the server. Make sure the backend is running.',
+      );
+      print('Registration error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -185,7 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
-                          onPressed: register,
+                          onPressed: isLoading ? null : register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 AppTheme.darkGreen,
@@ -196,9 +206,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   BorderRadius.circular(18),
                             ),
                           ),
-                          child: const Text(
-                            "CREATE ACCOUNT",
-                          ),
+                          child: isLoading
+                              ? const CircularProgressIndicator()
+                              : const Text(
+                                  "CREATE ACCOUNT",
+                                ),
                         ),
                       ),
                     ],

@@ -1,7 +1,10 @@
+
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/app_data.dart';
-import '../database/database_helper.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/spotless_background.dart';
 import 'main_screen.dart';
@@ -19,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
 
   bool obscurePassword = true;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -28,76 +32,100 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    String email = emailController.text.trim();
-    String password = passwordController.text;
+    final email = emailController.text.trim();
+    final password = passwordController.text;
 
-    // Check empty fields
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter email and password."),
-        ),
-      );
+      _showMessage("Please enter email and password.");
       return;
     }
 
-    // Check @ symbol in email
     if (!email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid email address."),
-        ),
-      );
+      _showMessage("Please enter a valid email address.");
       return;
     }
 
-    // Check password length
-    if (password.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Password must be at least 8 characters long.",
-          ),
-        ),
-      );
-      return;
-    }
+    setState(() {
+      isLoading = true;
+    });
 
-    // Check email and password in SQLite
     try {
-      final user = await DatabaseHelper.instance.loginUser(
+      final result = await ApiService.login(
         email: email,
         password: password,
       );
 
-      // No matching user found
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Invalid email or password."),
-          ),
-        );
-        return;
-      }
-
-      // Login successful
-      AppData.userName = user['name'] as String;
+      print("LOGIN RESULT: $result");
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const MainScreen(),
-        ),
-      );
+      if (result['success'] == true) {
+        // Save logged-in user's information
+        AppData.userId = result['userId'];
+        AppData.userName = result['name'] ?? '';
+
+        // Save user session permanently
+        final prefs = await SharedPreferences.getInstance();
+
+        await prefs.setInt(
+          'user_id',
+          result['userId'],
+        );
+
+        await prefs.setString(
+          'user_name',
+          result['name'] ?? '',
+        );
+
+        await prefs.setString(
+          'user_email',
+          result['email'] ?? email,
+        );
+
+        print("USER ID SAVED: ${result['userId']}");
+
+        _showMessage("Login successful! 🌱");
+
+        await Future.delayed(
+          const Duration(milliseconds: 500),
+        );
+
+        if (!mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MainScreen(),
+          ),
+          (route) => false,
+        );
+      } else {
+        _showMessage(
+          result['message'] ?? 'Invalid email or password.',
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Login failed: $e"),
-        ),
-      );
+      print("LOGIN ERROR: $e");
+
+      if (mounted) {
+        _showMessage("Login failed: $e");
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -143,7 +171,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     "Let's make your surroundings cleaner.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppTheme.darkGreen.withOpacity(.65),
+                      color:
+                          AppTheme.darkGreen.withOpacity(.65),
                     ),
                   ),
 
@@ -153,16 +182,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(.75),
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius:
+                          BorderRadius.circular(30),
                     ),
                     child: Column(
                       children: [
                         TextField(
                           controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
+                          keyboardType:
+                              TextInputType.emailAddress,
+                          decoration:
+                              const InputDecoration(
                             labelText: "Email",
-                            prefixIcon: Icon(Icons.email),
+                            prefixIcon:
+                                Icon(Icons.email),
                           ),
                         ),
 
@@ -173,7 +206,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: obscurePassword,
                           decoration: InputDecoration(
                             labelText: "Password",
-                            prefixIcon: const Icon(Icons.lock),
+                            prefixIcon:
+                                const Icon(Icons.lock),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 obscurePassword
@@ -196,29 +230,47 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: double.infinity,
                           height: 55,
                           child: ElevatedButton(
-                            onPressed: login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.darkGreen,
-                              foregroundColor: AppTheme.beige,
-                              shape: RoundedRectangleBorder(
+                            onPressed:
+                                isLoading ? null : login,
+                            style:
+                                ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  AppTheme.darkGreen,
+                              foregroundColor:
+                                  AppTheme.beige,
+                              shape:
+                                  RoundedRectangleBorder(
                                 borderRadius:
                                     BorderRadius.circular(18),
                               ),
                             ),
-                            child: const Text(
-                              "LOGIN",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
-                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color:
+                                          AppTheme.beige,
+                                    ),
+                                  )
+                                : const Text(
+                                    "LOGIN",
+                                    style: TextStyle(
+                                      fontWeight:
+                                          FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
                           ),
                         ),
 
                         const SizedBox(height: 20),
 
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
                           children: [
                             const Text(
                               "New to Spotless? ",
@@ -236,8 +288,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: const Text(
                                 "Create account",
                                 style: TextStyle(
-                                  color: AppTheme.midnightGreen,
-                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      AppTheme.midnightGreen,
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
                             ),

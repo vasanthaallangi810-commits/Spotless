@@ -8,7 +8,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../data/app_data.dart';
 import '../models/report.dart';
-import '../database/database_helper.dart';
+import '../services/api_service.dart';
 
 class ReportGarbageScreen extends StatefulWidget {
   const ReportGarbageScreen({super.key});
@@ -20,7 +20,6 @@ class ReportGarbageScreen extends StatefulWidget {
 
 class _ReportGarbageScreenState
     extends State<ReportGarbageScreen> {
-
   final ImagePicker picker = ImagePicker();
 
   final TextEditingController descriptionController =
@@ -36,6 +35,7 @@ class _ReportGarbageScreenState
       const LatLng(20.5937, 78.9629);
 
   bool gettingLocation = false;
+  bool submitting = false;
 
   @override
   void dispose() {
@@ -48,15 +48,19 @@ class _ReportGarbageScreenState
   // ============================================================
 
   Future<void> pickImage(ImageSource source) async {
-    final image = await picker.pickImage(
-      source: source,
-      imageQuality: 80,
-    );
+    try {
+      final image = await picker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
 
-    if (image != null) {
-      setState(() {
-        selectedImage = image;
-      });
+      if (image != null) {
+        setState(() {
+          selectedImage = image;
+        });
+      }
+    } catch (e) {
+      _showMessage('Could not select image.');
     }
   }
 
@@ -70,7 +74,7 @@ class _ReportGarbageScreenState
     });
 
     try {
-      bool serviceEnabled =
+      final serviceEnabled =
           await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
@@ -94,8 +98,7 @@ class _ReportGarbageScreenState
       }
 
       if (permission == LocationPermission.denied ||
-          permission ==
-              LocationPermission.deniedForever) {
+          permission == LocationPermission.deniedForever) {
         _showMessage(
           'Location permission is required.',
         );
@@ -140,68 +143,129 @@ class _ReportGarbageScreenState
   }
 
   // ============================================================
-  // SUBMIT REPORT
+  // SUBMIT REPORT TO NODE.JS → MYSQL
   // ============================================================
 
   Future<void> submitReport() async {
-  if (descriptionController.text.trim().isEmpty) {
-    _showMessage(
-      'Please describe the garbage problem.',
-    );
-    return;
+    // Check description
+    if (descriptionController.text.trim().isEmpty) {
+      _showMessage(
+        'Please describe the garbage problem.',
+      );
+      return;
+    }
+
+    // IMPORTANT:
+    // Get the logged-in user's ID directly from AppData.
+    // LoginScreen stores it here after successful login.
+    final int? userId = AppData.userId;
+
+    if (userId == null) {
+      _showMessage(
+        'User session not found. Please login again.',
+      );
+      return;
+    }
+
+    setState(() {
+      submitting = true;
+    });
+
+    try {
+      // Get image path
+      String imagePath = '';
+
+      if (selectedImage != null) {
+        imagePath = selectedImage!.path;
+      }
+
+      debugPrint('==============================');
+      debugPrint('SUBMITTING REPORT');
+      debugPrint('User ID: $userId');
+      debugPrint('Type: $selectedType');
+      debugPrint(
+        'Description: ${descriptionController.text.trim()}',
+      );
+      debugPrint(
+        'Latitude: ${selectedLocation.latitude}',
+      );
+      debugPrint(
+        'Longitude: ${selectedLocation.longitude}',
+      );
+      debugPrint('Image: $imagePath');
+      debugPrint('==============================');
+
+      // Send report to Node.js → MySQL
+      final result = await ApiService.submitReport(
+        userId: userId,
+        garbageType: selectedType,
+        description:
+            descriptionController.text.trim(),
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        imagePath: imagePath,
+      );
+
+      if (!mounted) return;
+
+      debugPrint('API RESPONSE: $result');
+
+      if (result['success'] == true) {
+        // Keep local AppData updated for the current UI
+        Uint8List? imageBytes;
+
+        if (selectedImage != null) {
+          imageBytes =
+              await selectedImage!.readAsBytes();
+        }
+
+        final report = Report(
+          type: selectedType,
+          description:
+              descriptionController.text.trim(),
+          latitude: selectedLocation.latitude,
+          longitude: selectedLocation.longitude,
+          imagePath: imagePath,
+          imageBytes: imageBytes,
+          status: 'Pending',
+          date: DateTime.now(),
+        );
+
+        AppData.reports.add(report);
+
+        _showMessage(
+          'Report submitted successfully! 🌿',
+        );
+
+        await Future.delayed(
+          const Duration(milliseconds: 500),
+        );
+
+        if (!mounted) return;
+
+        Navigator.pop(context);
+      } else {
+        _showMessage(
+          result['message'] ??
+              'Report submission failed.',
+        );
+      }
+    } catch (e) {
+      debugPrint('REPORT API ERROR: $e');
+
+      if (!mounted) return;
+
+      _showMessage(
+        'Could not connect to the server.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          submitting = false;
+        });
+      }
+    }
   }
-
-  Uint8List? imageBytes;
-
-  if (selectedImage != null) {
-    imageBytes = await selectedImage!.readAsBytes();
-  }
-
-  final report = Report(
-    type: selectedType,
-    description: descriptionController.text.trim(),
-    latitude: selectedLocation.latitude,
-    longitude: selectedLocation.longitude,
-    imagePath: selectedImage?.path ?? '',
-    imageBytes: imageBytes,
-    status: 'Pending',
-    date: DateTime.now(),
-  );
-
-  // Save report to SQLite
-  try {
-  await DatabaseHelper.instance.insertReport(
-    type: report.type,
-    description: report.description,
-    latitude: report.latitude,
-    longitude: report.longitude,
-    imagePath: report.imagePath,
-    imageBytes: report.imageBytes,
-    status: report.status,
-    date: report.date,
-  );
-
-  debugPrint('✅ REPORT INSERTED INTO SQLITE');
-
-} catch (e, stackTrace) {
-  debugPrint('❌ SQLITE ERROR: $e');
-  debugPrint('$stackTrace');
-
-  _showMessage('Database error: $e');
-  return;
-}
-
-  // Keep existing AppData functionality
-  AppData.reports.add(report);
-
-  _showMessage(
-    'Report submitted successfully! 🌿',
-  );
-
-  if (!mounted) return;
-
-  Navigator.pop(context);
-}
 
   // ============================================================
   // SHOW MESSAGE
@@ -223,7 +287,8 @@ class _ReportGarbageScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F4D5),
+      backgroundColor:
+          const Color(0xFFF7F4D5),
 
       appBar: AppBar(
         title: const Text(
@@ -232,8 +297,10 @@ class _ReportGarbageScreenState
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFF0A3323),
-        foregroundColor: const Color(0xFFF7F4D5),
+        backgroundColor:
+            const Color(0xFF0A3323),
+        foregroundColor:
+            const Color(0xFFF7F4D5),
       ),
 
       body: SingleChildScrollView(
@@ -272,7 +339,8 @@ class _ReportGarbageScreenState
                     BorderRadius.circular(20),
 
                 border: Border.all(
-                  color: const Color(0xFF839958),
+                  color:
+                      const Color(0xFF839958),
                 ),
               ),
 
@@ -286,10 +354,13 @@ class _ReportGarbageScreenState
                         const Icon(
                           Icons.camera_alt_outlined,
                           size: 50,
-                          color: Color(0xFF0A3323),
+                          color:
+                              Color(0xFF0A3323),
                         ),
 
-                        const SizedBox(height: 12),
+                        const SizedBox(
+                          height: 12,
+                        ),
 
                         Row(
                           mainAxisAlignment:
@@ -303,16 +374,20 @@ class _ReportGarbageScreenState
                                 ImageSource.camera,
                               ),
 
-                              icon: const Icon(
+                              icon:
+                                  const Icon(
                                 Icons.camera_alt,
                               ),
 
-                              label: const Text(
+                              label:
+                                  const Text(
                                 'Camera',
                               ),
                             ),
 
-                            const SizedBox(width: 12),
+                            const SizedBox(
+                              width: 12,
+                            ),
 
                             OutlinedButton.icon(
                               onPressed: () =>
@@ -320,11 +395,13 @@ class _ReportGarbageScreenState
                                 ImageSource.gallery,
                               ),
 
-                              icon: const Icon(
+                              icon:
+                                  const Icon(
                                 Icons.photo,
                               ),
 
-                              label: const Text(
+                              label:
+                                  const Text(
                                 'Gallery',
                               ),
                             ),
@@ -333,9 +410,10 @@ class _ReportGarbageScreenState
                       ],
                     )
 
-                  : FutureBuilder(
+                  : FutureBuilder<Uint8List>(
                       future:
-                          selectedImage!.readAsBytes(),
+                          selectedImage!
+                              .readAsBytes(),
 
                       builder: (
                         context,
@@ -350,12 +428,15 @@ class _ReportGarbageScreenState
 
                         return ClipRRect(
                           borderRadius:
-                              BorderRadius.circular(20),
+                              BorderRadius.circular(
+                            20,
+                          ),
 
                           child: Image.memory(
                             snapshot.data!,
                             fit: BoxFit.cover,
-                            width: double.infinity,
+                            width:
+                                double.infinity,
                           ),
                         );
                       },
@@ -387,13 +468,18 @@ class _ReportGarbageScreenState
                 filled: true,
 
                 fillColor:
-                    Colors.white.withOpacity(0.75),
+                    Colors.white
+                        .withOpacity(0.75),
 
-                border: OutlineInputBorder(
+                border:
+                    OutlineInputBorder(
                   borderRadius:
-                      BorderRadius.circular(15),
+                      BorderRadius.circular(
+                    15,
+                  ),
 
-                  borderSide: BorderSide.none,
+                  borderSide:
+                      BorderSide.none,
                 ),
               ),
 
@@ -406,7 +492,8 @@ class _ReportGarbageScreenState
 
                 DropdownMenuItem(
                   value: 'Food Waste',
-                  child: Text('Food Waste'),
+                  child:
+                      Text('Food Waste'),
                 ),
 
                 DropdownMenuItem(
@@ -415,13 +502,17 @@ class _ReportGarbageScreenState
                 ),
 
                 DropdownMenuItem(
-                  value: 'Electronic Waste',
-                  child: Text('Electronic Waste'),
+                  value:
+                      'Electronic Waste',
+                  child:
+                      Text('Electronic Waste'),
                 ),
 
                 DropdownMenuItem(
-                  value: 'Construction Waste',
-                  child: Text('Construction Waste'),
+                  value:
+                      'Construction Waste',
+                  child:
+                      Text('Construction Waste'),
                 ),
 
                 DropdownMenuItem(
@@ -470,13 +561,18 @@ class _ReportGarbageScreenState
                 filled: true,
 
                 fillColor:
-                    Colors.white.withOpacity(0.75),
+                    Colors.white
+                        .withOpacity(0.75),
 
-                border: OutlineInputBorder(
+                border:
+                    OutlineInputBorder(
                   borderRadius:
-                      BorderRadius.circular(15),
+                      BorderRadius.circular(
+                    15,
+                  ),
 
-                  borderSide: BorderSide.none,
+                  borderSide:
+                      BorderSide.none,
                 ),
               ),
             ),
@@ -498,8 +594,10 @@ class _ReportGarbageScreenState
 
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A3323),
+                    fontWeight:
+                        FontWeight.bold,
+                    color:
+                        Color(0xFF0A3323),
                   ),
                 ),
 
@@ -524,7 +622,8 @@ class _ReportGarbageScreenState
                           Icons.my_location,
                         ),
 
-                  label: const Text(
+                  label:
+                      const Text(
                     'Use my location',
                   ),
                 ),
@@ -534,7 +633,7 @@ class _ReportGarbageScreenState
             const SizedBox(height: 10),
 
             // ==================================================
-            // ACTUAL MAP
+            // MAP
             // ==================================================
 
             Container(
@@ -604,7 +703,8 @@ class _ReportGarbageScreenState
                         width: 55,
                         height: 55,
 
-                        child: const Icon(
+                        child:
+                            const Icon(
                           Icons.location_pin,
 
                           size: 55,
@@ -627,8 +727,8 @@ class _ReportGarbageScreenState
               style: TextStyle(
                 fontSize: 13,
 
-                color:
-                    Colors.black.withOpacity(0.6),
+                color: Colors.black
+                    .withOpacity(0.6),
               ),
             ),
 
@@ -640,33 +740,51 @@ class _ReportGarbageScreenState
 
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF0A3323),
+                color:
+                    Color(0xFF0A3323),
               ),
             ),
 
             const SizedBox(height: 35),
 
             // ==================================================
-            // SUBMIT
+            // SUBMIT BUTTON
             // ==================================================
 
             SizedBox(
               width: double.infinity,
               height: 58,
 
-              child: ElevatedButton.icon(
+              child:
+                  ElevatedButton.icon(
 
-                onPressed: submitReport,
+                onPressed:
+                    submitting
+                        ? null
+                        : submitReport,
 
-                icon: const Icon(
-                  Icons.send,
-                ),
+                icon: submitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child:
+                            CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.send,
+                      ),
 
-                label: const Text(
-                  'SUBMIT REPORT',
+                label: Text(
+                  submitting
+                      ? 'SUBMITTING...'
+                      : 'SUBMIT REPORT',
 
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                  style:
+                      const TextStyle(
+                    fontWeight:
+                        FontWeight.bold,
                     letterSpacing: 1,
                   ),
                 ),
@@ -675,16 +793,22 @@ class _ReportGarbageScreenState
                     ElevatedButton.styleFrom(
 
                   backgroundColor:
-                      const Color(0xFF0A3323),
+                      const Color(
+                    0xFF0A3323,
+                  ),
 
                   foregroundColor:
-                      const Color(0xFFF7F4D5),
+                      const Color(
+                    0xFFF7F4D5,
+                  ),
 
                   shape:
                       RoundedRectangleBorder(
 
                     borderRadius:
-                        BorderRadius.circular(18),
+                        BorderRadius.circular(
+                      18,
+                    ),
                   ),
                 ),
               ),
