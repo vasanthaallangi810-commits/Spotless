@@ -333,7 +333,7 @@ class _ReportGarbageScreenState
 
               decoration: BoxDecoration(
                 color: const Color(0xFF839958)
-                    .withOpacity(0.18),
+                    .withValues(alpha: 0.18),
 
                 borderRadius:
                     BorderRadius.circular(20),
@@ -461,7 +461,7 @@ class _ReportGarbageScreenState
             const SizedBox(height: 10),
 
             DropdownButtonFormField<String>(
-              value: selectedType,
+              initialValue: selectedType,
 
               decoration:
                   InputDecoration(
@@ -469,7 +469,7 @@ class _ReportGarbageScreenState
 
                 fillColor:
                     Colors.white
-                        .withOpacity(0.75),
+                        .withValues(alpha: 0.75),
 
                 border:
                     OutlineInputBorder(
@@ -562,7 +562,7 @@ class _ReportGarbageScreenState
 
                 fillColor:
                     Colors.white
-                        .withOpacity(0.75),
+                        .withValues(alpha: 0.75),
 
                 border:
                     OutlineInputBorder(
@@ -648,7 +648,7 @@ class _ReportGarbageScreenState
 
                   BoxShadow(
                     color: Colors.black
-                        .withOpacity(0.15),
+                        .withValues(alpha: 0.15),
 
                     blurRadius: 15,
 
@@ -728,7 +728,7 @@ class _ReportGarbageScreenState
                 fontSize: 13,
 
                 color: Colors.black
-                    .withOpacity(0.6),
+                    .withValues(alpha: 0.6),
               ),
             ),
 

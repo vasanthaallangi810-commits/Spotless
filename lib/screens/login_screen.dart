@@ -172,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color:
-                          AppTheme.darkGreen.withOpacity(.65),
+                          AppTheme.darkGreen.withValues(alpha: .65),
                     ),
                   ),
 
@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(.75),
+                      color: Colors.white.withValues(alpha: .75),
                       borderRadius:
                           BorderRadius.circular(30),
                     ),

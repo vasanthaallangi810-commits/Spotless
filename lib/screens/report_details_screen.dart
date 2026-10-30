@@ -1,3 +1,6 @@
+
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../models/report.dart';
@@ -15,32 +18,48 @@ class ReportDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       appBar: AppBar(
+        backgroundColor: const Color(0xFF0A3323),
+        foregroundColor: Colors.white,
+        elevation: 0,
         title: const Text(
-          "Report Details",
+          'Report Details',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            fontSize: 22,
           ),
         ),
       ),
       body: SpotlessBackground(
         child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
+              // REPORT IMAGE
               if (report.imageBytes != null)
                 ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(28),
                   child: Image.memory(
                     report.imageBytes!,
                     width: double.infinity,
                     height: 250,
                     fit: BoxFit.cover,
+                  ),
+                )
+              else
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5EBD9),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    size: 75,
+                    color: Color(0xFF0A3323),
                   ),
                 ),
 
@@ -50,10 +69,8 @@ class ReportDetailsScreen extends StatelessWidget {
                 report.garbageType,
                 style: const TextStyle(
                   fontSize: 30,
-                  fontWeight:
-                      FontWeight.w900,
-                  color:
-                      AppTheme.darkGreen,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.darkGreen,
                 ),
               ),
 
@@ -61,30 +78,29 @@ class ReportDetailsScreen extends StatelessWidget {
 
               _detail(
                 Icons.location_on,
-                "Location",
+                'Location',
                 report.location,
               ),
 
               _detail(
                 Icons.description,
-                "Description",
-                report.description
-                    .isEmpty
-                    ? "No description provided."
+                'Description',
+                report.description.isEmpty
+                    ? 'No description provided.'
                     : report.description,
               ),
 
               _detail(
                 Icons.calendar_today,
-                "Date",
-                "${report.date.day}/"
-                    "${report.date.month}/"
-                    "${report.date.year}",
+                'Date',
+                '${report.date.day}/'
+                    '${report.date.month}/'
+                    '${report.date.year}',
               ),
 
               _detail(
                 Icons.info_outline,
-                "Status",
+                'Status',
                 report.status,
               ),
             ],
@@ -100,48 +116,37 @@ class ReportDetailsScreen extends StatelessWidget {
     String value,
   ) {
     return Container(
-      margin:
-          const EdgeInsets.only(bottom: 14),
-      padding:
-          const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color:
-            Colors.white.withOpacity(.75),
-        borderRadius:
-            BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
-            color:
-                AppTheme.midnightGreen,
+            color: AppTheme.midnightGreen,
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppTheme
-                        .darkGreen
-                        .withOpacity(.55),
+                    color: AppTheme.darkGreen.withValues(alpha: 0.55),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
                   style: const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                    color:
-                        AppTheme.darkGreen,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.darkGreen,
                   ),
                 ),
               ],

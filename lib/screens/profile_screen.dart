@@ -1,3 +1,5 @@
+import 'profile_option_screens.dart';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -356,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     'Keep your surroundings spotless 🌿',
                     style: TextStyle(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.black.withValues(alpha: 0.55),
                     ),
                   ),
 
@@ -401,25 +403,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _profileOption(
                     icon: Icons.person_outline,
                     title: 'Personal Information',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PersonalInfoScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   _profileOption(
                     icon: Icons.notifications_none,
                     title: 'Notifications',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationsScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   _profileOption(
                     icon: Icons.location_on_outlined,
                     title: 'Location Settings',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LocationSettingsScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   _profileOption(
                     icon: Icons.info_outline,
                     title: 'About Spotless',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AboutSpotlessScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 20),
@@ -479,7 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       decoration: BoxDecoration(
         color: const Color(0xFF839958)
-            .withOpacity(0.22),
+            .withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(20),
       ),
 
@@ -507,7 +537,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -530,7 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
 
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(16),
       ),
 

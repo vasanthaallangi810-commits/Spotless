@@ -162,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen>
                               style: TextStyle(
                                 fontSize: 15,
                                 color: AppTheme.darkGreen
-                                    .withOpacity(.65),
+                                    .withValues(alpha: .65),
                               ),
                             ),
                           ],
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen>
                       boxShadow: [
                         BoxShadow(
                           color: AppTheme.darkGreen
-                              .withOpacity(.25),
+                              .withValues(alpha: .25),
                           blurRadius: 25,
                           offset: const Offset(0, 12),
                         ),
@@ -243,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen>
                                     "Spot it. Report it. Keep it clean.",
                                     style: TextStyle(
                                       color: AppTheme.beige
-                                          .withOpacity(.72),
+                                          .withValues(alpha: .72),
                                       fontSize: 13,
                                     ),
                                   ),
@@ -419,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(.75),
+          color: Colors.white.withValues(alpha: .75),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -447,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen>
               label,
               style: TextStyle(
                 color: AppTheme.darkGreen
-                    .withOpacity(.65),
+                    .withValues(alpha: .65),
                 fontSize: 12,
               ),
             ),

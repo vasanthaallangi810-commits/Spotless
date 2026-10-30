@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../data/app_data.dart';
 import '../services/api_service.dart';
-import '../widgets/spotless_background.dart';
+import '../models/report.dart';
+import 'report_details_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -13,472 +14,270 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
+  List<Map<String, dynamic>> reports = [];
   bool isLoading = true;
   String? errorMessage;
-
-  List<dynamic> reports = [];
 
   @override
   void initState() {
     super.initState();
-    loadReports();
+    fetchReports();
   }
 
-  // ============================================================
-  // LOAD REPORTS FROM NODE.JS → MYSQL
-  // ============================================================
-
-  Future<void> loadReports() async {
-    final int? userId = AppData.userId;
-
-    if (userId == null) {
-      setState(() {
-        isLoading = false;
-        errorMessage =
-            'User session not found. Please login again.';
-      });
-      return;
-    }
-
+  Future<void> fetchReports() async {
     try {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
+      final userId = AppData.userId;
 
-      debugPrint('================================');
-      debugPrint('LOADING USER REPORTS');
-      debugPrint('USER ID: $userId');
-      debugPrint('================================');
+if (userId == null) {
+  setState(() {
+    errorMessage = 'User session not found. Please login again.';
+    isLoading = false;
+  });
+  return;
+}
 
       final result = await ApiService.getMyReports(
         userId: userId,
       );
 
-      debugPrint('REPORTS API RESPONSE: $result');
-
-      if (!mounted) return;
-
-      if (result['success'] == true) {
-        setState(() {
-          reports = result['reports'] ?? [];
-          isLoading = false;
-        });
-
-        debugPrint(
-          'TOTAL REPORTS: ${reports.length}',
-        );
-      } else {
-        setState(() {
-          isLoading = false;
-          errorMessage =
-              result['message'] ??
-              'Unable to load reports.';
-        });
-      }
-    } catch (e) {
-      debugPrint('GET REPORTS ERROR: $e');
-
       if (!mounted) return;
 
       setState(() {
+        reports = List<Map<String, dynamic>>.from(
+          result['reports'] ?? [],
+        );
         isLoading = false;
-        errorMessage =
-            'Unable to load reports.\nException: $e';
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = 'Unable to load reports. Please try again.';
+        isLoading = false;
       });
     }
   }
 
-  // ============================================================
-  // REFRESH
-  // ============================================================
+  DateTime parseDate(dynamic value) {
+    if (value == null) return DateTime.now();
 
-  Future<void> refreshReports() async {
-    await loadReports();
+    try {
+      return DateTime.parse(value.toString());
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
-  // ============================================================
-  // REPORT CARD
-  // ============================================================
+  Widget buildReportImage(Map<String, dynamic> report) {
+    // Find the locally stored image bytes for this report.
+    // Reports loaded from the backend may not have image bytes.
+    final matchingReport = AppData.reports.cast<Report?>().firstWhere(
+      (localReport) =>
+          localReport != null &&
+          localReport.type == report['garbage_type'] &&
+          localReport.description == report['description'],
+      orElse: () => null,
+    );
 
-  Widget reportCard(
-    Map<String, dynamic> report,
-  ) {
-    final String garbageType =
-        report['garbage_type']?.toString() ?? 'Unknown';
-
-    final String description =
-        report['description']?.toString() ?? '';
-
-    final String status =
-        report['status']?.toString() ?? 'Pending';
-
-    final String latitude =
-        report['latitude']?.toString() ?? '';
-
-    final String longitude =
-        report['longitude']?.toString() ?? '';
-
-    final String createdAt =
-        report['created_at']?.toString() ?? '';
+    if (matchingReport?.imageBytes != null) {
+      return Image.memory(
+        matchingReport!.imageBytes!,
+        width: 75,
+        height: 75,
+        fit: BoxFit.cover,
+      );
+    }
 
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(
-        bottom: 16,
-      ),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-
-          // ====================================================
-          // TOP ROW
-          // ====================================================
-
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A3323)
-                      .withOpacity(0.10),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: Color(0xFF0A3323),
-                  size: 28,
-                ),
-              ),
-
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      garbageType,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0A3323),
-                      ),
-                    ),
-
-                    if (createdAt.isNotEmpty)
-                      const SizedBox(height: 4),
-
-                    if (createdAt.isNotEmpty)
-                      Text(
-                        createdAt,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              Colors.black.withOpacity(0.55),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              // ==================================================
-              // STATUS
-              // ==================================================
-
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF839958)
-                      .withOpacity(0.20),
-                  borderRadius:
-                      BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A3323),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ====================================================
-          // DESCRIPTION
-          // ====================================================
-
-          if (description.isNotEmpty)
-            Text(
-              description,
-              style: const TextStyle(
-                fontSize: 15,
-                height: 1.4,
-                color: Color(0xFF333333),
-              ),
-            ),
-
-          const SizedBox(height: 14),
-
-          // ====================================================
-          // LOCATION
-          // ====================================================
-
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F4D5),
-              borderRadius:
-                  BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  color: Color(0xFF0A3323),
-                  size: 22,
-                ),
-
-                const SizedBox(width: 8),
-
-                Expanded(
-                  child: Text(
-                    'Latitude: $latitude\n'
-                    'Longitude: $longitude',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF0A3323),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      width: 75,
+      height: 75,
+      color: Colors.green.shade50,
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        color: Colors.green.shade700,
+        size: 30,
       ),
     );
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
+  void openReportDetails(Map<String, dynamic> report) {
+    final matchingReport = AppData.reports.cast<Report?>().firstWhere(
+      (localReport) =>
+          localReport != null &&
+          localReport.type == report['garbage_type'] &&
+          localReport.description == report['description'],
+      orElse: () => null,
+    );
+
+    final reportDetails = Report(
+      type: report['garbage_type']?.toString() ?? 'Unknown',
+      description: report['description']?.toString() ?? '',
+      latitude: double.tryParse(
+            report['latitude']?.toString() ?? '',
+          ) ??
+          0.0,
+      longitude: double.tryParse(
+            report['longitude']?.toString() ?? '',
+          ) ??
+          0.0,
+      imagePath: matchingReport?.imagePath ?? '',
+      imageBytes: matchingReport?.imageBytes,
+      status: report['status']?.toString() ?? 'Pending',
+      date: parseDate(report['created_at']),
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReportDetailsScreen(
+          report: reportDetails,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF7F4D5),
+      backgroundColor: const Color(0xFFF7F4D5),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-      // ========================================================
-      // APP BAR
-      // ========================================================
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A3323),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'My Reports',
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+),
 
-      appBar: AppBar(
-        title: const Text(
-          'My Reports',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor:
-            const Color(0xFF0A3323),
-        foregroundColor:
-            const Color(0xFFF7F4D5),
-        actions: [
-          IconButton(
-            onPressed:
-                isLoading ? null : refreshReports,
-            icon: const Icon(
-              Icons.refresh,
-            ),
-          ),
-        ],
-      ),
+              const SizedBox(height: 20),
 
-      // ========================================================
-      // SPOTLESS FLOATING BACKGROUND 🌱♻️
-      // ========================================================
-
-      body: SpotlessBackground(
-        child: RefreshIndicator(
-          onRefresh: refreshReports,
-
-          child: isLoading
-
-              // ==================================================
-              // LOADING
-              // ==================================================
-
-              ? const Center(
-                  child:
-                      CircularProgressIndicator(),
-                )
-
-              // ==================================================
-              // ERROR
-              // ==================================================
-
-              : errorMessage != null
-                  ? ListView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(),
-
-                      children: [
-                        const SizedBox(
-                          height: 150,
-                        ),
-
-                        const Icon(
-                          Icons.error_outline,
-                          size: 65,
+              Expanded(
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
                           color: Color(0xFF0A3323),
                         ),
-
-                        const SizedBox(
-                          height: 20,
-                        ),
-
-                        Padding(
-                          padding:
-                              const EdgeInsets.all(25),
-                          child: Text(
-                            errorMessage!,
-                            textAlign:
-                                TextAlign.center,
-                            style:
-                                const TextStyle(
-                              fontSize: 16,
-                              color:
-                                  Color(0xFF333333),
+                      )
+                    : errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  errorMessage!,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      isLoading = true;
+                                      errorMessage = null;
+                                    });
+                                    fetchReports();
+                                  },
+                                  child: const Text('Retry'),
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
+                          )
+                        : reports.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'No reports found.',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              )
+                            : RefreshIndicator(
+                                onRefresh: fetchReports,
+                                child: ListView.builder(
+                                  itemCount: reports.length,
+                                  itemBuilder: (context, index) {
+                                    final report = reports[index];
 
-                        Center(
-                          child:
-                              ElevatedButton.icon(
-                            onPressed:
-                                loadReports,
-                            icon:
-                                const Icon(
-                              Icons.refresh,
-                            ),
-                            label:
-                                const Text(
-                              'Try Again',
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
+                                    return Card(
+                                      margin: const EdgeInsets.only(
+                                        bottom: 14,
+                                      ),
+                                      elevation: 2,
+                                      color: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                      ),
+                                      child: InkWell(
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                        onTap: () {
+                                          openReportDetails(report);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(10),
+                                          child: Row(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                child: buildReportImage(
+                                                  report,
+                                                ),
+                                              ),
 
-                  // ==================================================
-                  // NO REPORTS
-                  // ==================================================
+                                              const SizedBox(width: 16),
 
-                  : reports.isEmpty
-                      ? ListView(
-                          physics:
-                              const AlwaysScrollableScrollPhysics(),
+                                              Expanded(
+                                                child: Text(
+                                                  report['garbage_type']
+                                                          ?.toString() ??
+                                                      'Unknown',
+                                                  style: const TextStyle(
+                                                    fontSize: 17,
+                                                    fontWeight:
+                                                        FontWeight.bold,
+                                                    color:
+                                                        Color(0xFF0A3323),
+                                                  ),
+                                                ),
+                                              ),
 
-                          children: [
-                            const SizedBox(
-                              height: 150,
-                            ),
-
-                            const Icon(
-                              Icons
-                                  .delete_sweep_outlined,
-                              size: 75,
-                              color:
-                                  Color(0xFF0A3323),
-                            ),
-
-                            const SizedBox(
-                              height: 20,
-                            ),
-
-                            const Text(
-                              'No reports yet',
-                              textAlign:
-                                  TextAlign.center,
-                              style:
-                                  TextStyle(
-                                fontSize: 22,
-                                fontWeight:
-                                    FontWeight.bold,
-                                color:
-                                    Color(0xFF0A3323),
+                                              const Icon(
+                                                Icons.chevron_right,
+                                                color: Color(0xFF0A3323),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-
-                            const SizedBox(
-                              height: 8,
-                            ),
-
-                            Text(
-                              'Your submitted garbage reports '
-                              'will appear here.',
-                              textAlign:
-                                  TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black
-                                    .withOpacity(0.6),
-                              ),
-                            ),
-                          ],
-                        )
-
-                      // ==================================================
-                      // REPORT LIST
-                      // ==================================================
-
-                      : ListView.builder(
-                          physics:
-                              const AlwaysScrollableScrollPhysics(),
-
-                          padding:
-                              const EdgeInsets.all(20),
-
-                          itemCount:
-                              reports.length,
-
-                          itemBuilder:
-                              (context, index) {
-                            return reportCard(
-                              reports[index]
-                                  as Map<String,
-                                      dynamic>,
-                            );
-                          },
-                        ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-

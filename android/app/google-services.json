@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "378611349897",
+    "project_id": "spotless-333",
+    "storage_bucket": "spotless-333.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378611349897:android:3dc7c6b829644742454958",
+        "android_client_info": {
+          "package_name": "com.example.spotless"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIv0aXW6k1xmUcsa_s2eWaByrqHTyaaWo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -176,7 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
                               color: const Color(0xFFF7F4D5),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                 ),
@@ -308,10 +308,10 @@ class _SlideToStartState extends State<SlideToStart> {
           height: 68,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF0A3323).withOpacity(0.65),
+            color: const Color(0xFF0A3323).withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(40),
             border: Border.all(
-              color: const Color(0xFFF7F4D5).withOpacity(0.35),
+              color: const Color(0xFFF7F4D5).withValues(alpha: 0.35),
             ),
           ),
           child: Stack(
@@ -321,7 +321,7 @@ class _SlideToStartState extends State<SlideToStart> {
                 child: Text(
                   'SLIDE TO GET STARTED  →',
                   style: TextStyle(
-                    color: const Color(0xFFF7F4D5).withOpacity(0.9),
+                    color: const Color(0xFFF7F4D5).withValues(alpha: 0.9),
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.3,
