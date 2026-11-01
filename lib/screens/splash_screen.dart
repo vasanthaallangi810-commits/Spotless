@@ -49,201 +49,182 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // =====================================================
-          // BACKGROUND
-          // =====================================================
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideLayout = constraints.maxWidth >= 700;
+        final maxContentWidth = isWideLayout ? 540.0 : 420.0;
+        final titleSize = isWideLayout ? 52.0 : 42.0;
 
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0A3323),
-                  Color(0xFF105E43),
-                  Color(0xFF839958),
-                  Color(0xFFF7F4D5),
-                ],
-              ),
-            ),
-          ),
-
-          // =====================================================
-          // FLOATING ENVIRONMENT ICONS
-          // =====================================================
-
-          AnimatedBuilder(
-            animation: _floatController,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  _floatingIcon(
-                    icon: Icons.eco,
-                    left: 35,
-                    top: 110,
-                    size: 38,
-                    phase: 0,
+        return Scaffold(
+          body: Stack(
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF0A3323),
+                      Color(0xFF105E43),
+                      Color(0xFF839958),
+                      Color(0xFFF7F4D5),
+                    ],
                   ),
-
-                  _floatingIcon(
-                    icon: Icons.recycling,
-                    right: 35,
-                    top: 160,
-                    size: 44,
-                    phase: 1,
-                  ),
-
-                  _floatingIcon(
-                    icon: Icons.water_drop,
-                    left: 65,
-                    top: 350,
-                    size: 32,
-                    phase: 2,
-                  ),
-
-                  _floatingIcon(
-                    icon: Icons.local_florist,
-                    right: 70,
-                    top: 410,
-                    size: 35,
-                    phase: 3,
-                  ),
-
-                  _floatingIcon(
-                    icon: Icons.energy_savings_leaf,
-                    left: 25,
-                    bottom: 190,
-                    size: 42,
-                    phase: 4,
-                  ),
-
-                  _floatingIcon(
-                    icon: Icons.delete_outline,
-                    right: 35,
-                    bottom: 250,
-                    size: 40,
-                    phase: 5,
-                  ),
-
-                  _floatingIcon(
-                    icon: Icons.public,
-                    left: 120,
-                    bottom: 110,
-                    size: 30,
-                    phase: 6,
-                  ),
-
-                  _floatingIcon(
-                    icon: Icons.nature_people,
-                    right: 115,
-                    bottom: 100,
-                    size: 35,
-                    phase: 7,
-                  ),
-                ],
-              );
-            },
-          ),
-
-          // =====================================================
-          // MAIN CONTENT
-          // =====================================================
-
-          SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        final scale =
-                            1 + (_pulseController.value * 0.05);
-
-                        return Transform.scale(
-                          scale: scale,
-                          child: Container(
-                            width: 130,
-                            height: 130,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(0xFFF7F4D5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.eco,
-                              size: 75,
-                              color: Color(0xFF0A3323),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 35),
-
-                    const Text(
-                      'SPOTLESS',
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 6,
-                        color: Color(0xFFF7F4D5),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    const Text(
-                      'Cleaner surroundings.\nA better tomorrow.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        height: 1.5,
-                        color: Color(0xFFE8E8C7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    const SizedBox(height: 70),
-
-                    // =================================================
-                    // SLIDE BUTTON
-                    // =================================================
-
-                    SlideToStart(
-                      onComplete: _getStarted,
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    const Text(
-                      'Report • Track • Clean',
-                      style: TextStyle(
-                        color: Color(0xFFE8E8C7),
-                        fontSize: 13,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
                 ),
               ),
-            ),
+
+              AnimatedBuilder(
+                animation: _floatController,
+                builder: (context, child) {
+                  return Stack(
+                    children: [
+                      _floatingIcon(
+                        icon: Icons.eco,
+                        left: 35,
+                        top: 110,
+                        size: 38,
+                        phase: 0,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.recycling,
+                        right: 35,
+                        top: 160,
+                        size: 44,
+                        phase: 1,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.water_drop,
+                        left: 65,
+                        top: 350,
+                        size: 32,
+                        phase: 2,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.local_florist,
+                        right: 70,
+                        top: 410,
+                        size: 35,
+                        phase: 3,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.energy_savings_leaf,
+                        left: 25,
+                        bottom: 190,
+                        size: 42,
+                        phase: 4,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.delete_outline,
+                        right: 35,
+                        bottom: 250,
+                        size: 40,
+                        phase: 5,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.public,
+                        left: 120,
+                        bottom: 110,
+                        size: 30,
+                        phase: 6,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.nature_people,
+                        right: 115,
+                        bottom: 100,
+                        size: 35,
+                        phase: 7,
+                      ),
+                    ],
+                  );
+                },
+              ),
+
+              SafeArea(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: maxContentWidth,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) {
+                              final scale =
+                                  1 + (_pulseController.value * 0.05);
+
+                              return Transform.scale(
+                                scale: scale,
+                                child: Container(
+                                  width: isWideLayout ? 150 : 130,
+                                  height: isWideLayout ? 150 : 130,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFFF7F4D5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.2),
+                                        blurRadius: 30,
+                                        spreadRadius: 5,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.eco,
+                                    size: 75,
+                                    color: Color(0xFF0A3323),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 35),
+                          Text(
+                            'SPOTLESS',
+                            style: TextStyle(
+                              fontSize: titleSize,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 6,
+                              color: const Color(0xFFF7F4D5),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Cleaner surroundings.\nA better tomorrow.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              height: 1.5,
+                              color: Color(0xFFE8E8C7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 70),
+                          SlideToStart(
+                            onComplete: _getStarted,
+                          ),
+                          const SizedBox(height: 25),
+                          const Text(
+                            'Report • Track • Clean',
+                            style: TextStyle(
+                              color: Color(0xFFE8E8C7),
+                              fontSize: 13,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

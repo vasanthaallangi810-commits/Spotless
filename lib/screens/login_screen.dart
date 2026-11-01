@@ -130,182 +130,159 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SpotlessBackground(
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(25),
-              child: Column(
-                children: [
-                  const SizedBox(height: 30),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideLayout = constraints.maxWidth >= 700;
 
-                  Container(
-                    width: 95,
-                    height: 95,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.darkGreen,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.eco,
-                      color: AppTheme.beige,
-                      size: 55,
-                    ),
+        return Scaffold(
+          body: SpotlessBackground(
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isWideLayout ? 900 : 430,
                   ),
-
-                  const SizedBox(height: 20),
-
-                  const Text(
-                    "Welcome to Spotless",
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkGreen,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    "Let's make your surroundings cleaner.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color:
-                          AppTheme.darkGreen.withValues(alpha: .65),
-                    ),
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .75),
-                      borderRadius:
-                          BorderRadius.circular(30),
-                    ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(25),
                     child: Column(
                       children: [
-                        TextField(
-                          controller: emailController,
-                          keyboardType:
-                              TextInputType.emailAddress,
-                          decoration:
-                              const InputDecoration(
-                            labelText: "Email",
-                            prefixIcon:
-                                Icon(Icons.email),
+                        const SizedBox(height: 30),
+                        Container(
+                          width: 95,
+                          height: 95,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.darkGreen,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.eco,
+                            color: AppTheme.beige,
+                            size: 55,
                           ),
                         ),
-
-                        const SizedBox(height: 15),
-
-                        TextField(
-                          controller: passwordController,
-                          obscureText: obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: "Password",
-                            prefixIcon:
-                                const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                obscurePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  obscurePassword =
-                                      !obscurePassword;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 25),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: ElevatedButton(
-                            onPressed:
-                                isLoading ? null : login,
-                            style:
-                                ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  AppTheme.darkGreen,
-                              foregroundColor:
-                                  AppTheme.beige,
-                              shape:
-                                  RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(18),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child:
-                                        CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color:
-                                          AppTheme.beige,
-                                    ),
-                                  )
-                                : const Text(
-                                    "LOGIN",
-                                    style: TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                          ),
-                        ),
-
                         const SizedBox(height: 20),
-
-                        Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "New to Spotless? ",
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const RegisterScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                "Create account",
-                                style: TextStyle(
-                                  color:
-                                      AppTheme.midnightGreen,
-                                  fontWeight:
-                                      FontWeight.bold,
+                        const Text(
+                          "Welcome to Spotless",
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Let's make your surroundings cleaner.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.darkGreen.withValues(alpha: .65),
+                          ),
+                        ),
+                        const SizedBox(height: 35),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .75),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: "Email",
+                                  prefixIcon: Icon(Icons.email),
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 15),
+                              TextField(
+                                controller: passwordController,
+                                obscureText: obscurePassword,
+                                decoration: InputDecoration(
+                                  labelText: "Password",
+                                  prefixIcon: const Icon(Icons.lock),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      obscurePassword
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        obscurePassword = !obscurePassword;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 25),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 55,
+                                child: ElevatedButton(
+                                  onPressed: isLoading ? null : login,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.darkGreen,
+                                    foregroundColor: AppTheme.beige,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                  ),
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppTheme.beige,
+                                          ),
+                                        )
+                                      : const Text(
+                                          "LOGIN",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text("New to Spotless? "),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const RegisterScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      "Create account",
+                                      style: TextStyle(
+                                        color: AppTheme.midnightGreen,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
