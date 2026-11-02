@@ -152,7 +152,8 @@ if (userId == null) {
 
   Widget _floatingReportIcon({
     required IconData icon,
-    required double left,
+    double? left,
+    double? right,
     required double top,
     required double size,
     required int phase,
@@ -161,7 +162,8 @@ if (userId == null) {
     final drift = cos((_floatController.value * 2 * pi) + phase) * 8;
 
     return Positioned(
-      left: left + wave,
+      left: left != null ? left + wave : null,
+      right: right != null ? right - wave : null,
       top: top + drift,
       child: Opacity(
         opacity: 0.8,
@@ -188,57 +190,96 @@ if (userId == null) {
       body: AnimatedBuilder(
         animation: _floatController,
         builder: (context, _) {
+          final floatingIcons = [
+            _floatingReportIcon(
+              icon: Icons.delete_outline,
+              left: 20,
+              top: 80,
+              size: 30,
+              phase: 0,
+            ),
+            _floatingReportIcon(
+              icon: Icons.recycling,
+              left: 120,
+              top: 150,
+              size: 29,
+              phase: 1,
+            ),
+            _floatingReportIcon(
+              icon: Icons.location_on_outlined,
+              right: 30,
+              top: 120,
+              size: 27,
+              phase: 2,
+            ),
+            _floatingReportIcon(
+              icon: Icons.cleaning_services,
+              left: 60,
+              top: 240,
+              size: 28,
+              phase: 3,
+            ),
+            _floatingReportIcon(
+              icon: Icons.checklist_rtl,
+              right: 50,
+              top: 220,
+              size: 27,
+              phase: 4,
+            ),
+            _floatingReportIcon(
+              icon: Icons.eco,
+              left: 180,
+              top: 300,
+              size: 27,
+              phase: 5,
+            ),
+            _floatingReportIcon(
+              icon: Icons.local_florist,
+              right: 140,
+              top: 300,
+              size: 25,
+              phase: 6,
+            ),
+            _floatingReportIcon(
+              icon: Icons.grass,
+              left: 220,
+              top: 420,
+              size: 24,
+              phase: 7,
+            ),
+            _floatingReportIcon(
+              icon: Icons.forest,
+              right: 210,
+              top: 440,
+              size: 23,
+              phase: 8,
+            ),
+            _floatingReportIcon(
+              icon: Icons.delete_forever,
+              left: 40,
+              top: 450,
+              size: 25,
+              phase: 9,
+            ),
+            _floatingReportIcon(
+              icon: Icons.water_drop,
+              right: 70,
+              top: 470,
+              size: 24,
+              phase: 10,
+            ),
+            _floatingReportIcon(
+              icon: Icons.warning_amber_rounded,
+              left: 300,
+              top: 200,
+              size: 22,
+              phase: 11,
+            ),
+          ];
+
           return Stack(
             children: [
-              _floatingReportIcon(
-                icon: Icons.delete_outline,
-                left: 20,
-                top: 80,
-                size: 34,
-                phase: 0,
-              ),
-              _floatingReportIcon(
-                icon: Icons.recycling,
-                left: 120,
-                top: 150,
-                size: 33,
-                phase: 1,
-              ),
-              _floatingReportIcon(
-                icon: Icons.location_on_outlined,
-                right: 30,
-                top: 120,
-                size: 30,
-                phase: 2,
-              ),
-              _floatingReportIcon(
-                icon: Icons.cleaning_services,
-                left: 60,
-                top: 240,
-                size: 32,
-                phase: 3,
-              ),
-              _floatingReportIcon(
-                icon: Icons.checklist_rtl,
-                right: 50,
-                top: 220,
-                size: 31,
-                phase: 4,
-              ),
-              _floatingReportIcon(
-                icon: Icons.eco,
-                left: 180,
-                top: 300,
-                size: 30,
-                phase: 5,
-              ),
-              _floatingReportIcon(
-                icon: Icons.local_florist,
-                right: 140,
-                top: 310,
-                size: 29,
-                phase: 6,
-              ),
+              ...floatingIcons,
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(16),

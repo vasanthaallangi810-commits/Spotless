@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'profile_option_screens.dart';
 
 import 'package:flutter/material.dart';
@@ -6,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/app_data.dart';
 import '../services/api_service.dart';
-import '../widgets/spotless_background.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,10 +16,12 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
   final ImagePicker picker = ImagePicker();
 
   XFile? profileImage;
+  late final AnimationController _floatController;
 
   // ============================================================
   // REPORT STATISTICS
@@ -37,7 +40,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
 
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat();
+
     loadReportStats();
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
   }
 
   // ============================================================
@@ -265,232 +279,313 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // UI
   // ============================================================
 
+  Widget _floatingProfileIcon({
+    required IconData icon,
+    double? left,
+    double? right,
+    required double top,
+    required double size,
+    required int phase,
+  }) {
+    final wave = sin((_floatController.value * 2 * pi) + phase) * 10;
+    final drift = cos((_floatController.value * 2 * pi) + phase) * 8;
+
+    return Positioned(
+      left: left != null ? left + wave : null,
+      right: right != null ? right - wave : null,
+      top: top + drift,
+      child: Opacity(
+        opacity: 0.8,
+        child: Icon(
+          icon,
+          size: size,
+          color: const Color(0xFF839958),
+          shadows: [
+            Shadow(
+              color: const Color(0xFF839958).withValues(alpha: 0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4D5),
+      body: AnimatedBuilder(
+        animation: _floatController,
+        builder: (context, _) {
+          final floatingIcons = [
+            _floatingProfileIcon(
+              icon: Icons.delete_outline,
+              left: 18,
+              top: 80,
+              size: 30,
+              phase: 0,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.recycling,
+              right: 24,
+              top: 112,
+              size: 29,
+              phase: 1,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.cleaning_services,
+              left: 70,
+              top: 220,
+              size: 28,
+              phase: 2,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.eco,
+              right: 64,
+              top: 238,
+              size: 27,
+              phase: 3,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.checklist_rtl,
+              left: 150,
+              top: 310,
+              size: 26,
+              phase: 4,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.location_on_outlined,
+              right: 140,
+              top: 332,
+              size: 26,
+              phase: 5,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.local_florist,
+              left: 60,
+              top: 430,
+              size: 24,
+              phase: 6,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.grass,
+              right: 70,
+              top: 450,
+              size: 23,
+              phase: 7,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.nature_people,
+              left: 190,
+              top: 520,
+              size: 22,
+              phase: 8,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.forest,
+              right: 200,
+              top: 540,
+              size: 22,
+              phase: 9,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.delete_forever,
+              left: 260,
+              top: 180,
+              size: 23,
+              phase: 10,
+            ),
+            _floatingProfileIcon(
+              icon: Icons.water_drop,
+              right: 250,
+              top: 210,
+              size: 23,
+              phase: 11,
+            ),
+          ];
 
-      body: SpotlessBackground(
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: loadReportStats,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(22),
-
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-
-                  // =================================================
-                  // TITLE
-                  // =================================================
-
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'My Profile',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0A3323),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  // =================================================
-                  // PROFILE IMAGE
-                  // =================================================
-
-                  Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFF0A3323),
-                        ),
-                        child: profilePhoto(),
-                      ),
-
-                      Positioned(
-                        bottom: 2,
-                        right: 2,
-                        child: GestureDetector(
-                          onTap: changeProfilePicture,
-                          child: Container(
-                            width: 42,
-                            height: 42,
-                            decoration:
-                                const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFFD3968C),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Color(0xFFF7F4D5),
+          return Stack(
+            children: [
+              ...floatingIcons,
+              SafeArea(
+                child: RefreshIndicator(
+                  onRefresh: loadReportStats,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A3323),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'My Profile',
+                            style: TextStyle(
+                              fontSize: 23,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // =================================================
-                  // NAME
-                  // =================================================
-
-                  const Text(
-                    'Vasantha',
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A3323),
+                        const SizedBox(height: 35),
+                        Stack(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF0A3323),
+                              ),
+                              child: profilePhoto(),
+                            ),
+                            Positioned(
+                              bottom: 2,
+                              right: 2,
+                              child: GestureDetector(
+                                onTap: changeProfilePicture,
+                                child: Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xFFD3968C),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Color(0xFFF7F4D5),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'Vasantha',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0A3323),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Keep your surroundings spotless 🌿',
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        const SizedBox(height: 35),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _statCard(
+                                icon: Icons.delete_outline,
+                                title: 'Total Reports',
+                                value: isLoadingStats
+                                    ? '...'
+                                    : '$totalReports',
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _statCard(
+                                icon: Icons.check_circle_outline,
+                                title: 'Resolved',
+                                value: isLoadingStats
+                                    ? '...'
+                                    : '$resolvedReports',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                        _profileOption(
+                          icon: Icons.person_outline,
+                          title: 'Personal Information',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PersonalInfoScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _profileOption(
+                          icon: Icons.notifications_none,
+                          title: 'Notifications',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NotificationsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _profileOption(
+                          icon: Icons.location_on_outlined,
+                          title: 'Location Settings',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LocationSettingsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _profileOption(
+                          icon: Icons.info_outline,
+                          title: 'About Spotless',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AboutSpotlessScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: OutlinedButton.icon(
+                            onPressed: changeProfilePicture,
+                            icon: const Icon(Icons.edit),
+                            label: const Text('CHANGE PROFILE PICTURE'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF0A3323),
+                              side: const BorderSide(
+                                color: Color(0xFF0A3323),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    'Keep your surroundings spotless 🌿',
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.55),
-                    ),
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  // =================================================
-                  // STATISTICS
-                  // =================================================
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _statCard(
-                          icon: Icons.delete_outline,
-                          title: 'Total Reports',
-                          value: isLoadingStats
-                              ? '...'
-                              : '$totalReports',
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: _statCard(
-                          icon: Icons.check_circle_outline,
-                          title: 'Resolved',
-                          value: isLoadingStats
-                              ? '...'
-                              : '$resolvedReports',
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // =================================================
-                  // OPTIONS
-                  // =================================================
-
-                  _profileOption(
-                    icon: Icons.person_outline,
-                    title: 'Personal Information',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PersonalInfoScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _profileOption(
-                    icon: Icons.notifications_none,
-                    title: 'Notifications',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NotificationsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _profileOption(
-                    icon: Icons.location_on_outlined,
-                    title: 'Location Settings',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LocationSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  _profileOption(
-                    icon: Icons.info_outline,
-                    title: 'About Spotless',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AboutSpotlessScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // =================================================
-                  // CHANGE PHOTO BUTTON
-                  // =================================================
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: OutlinedButton.icon(
-                      onPressed: changeProfilePicture,
-                      icon: const Icon(
-                        Icons.edit,
-                      ),
-                      label: const Text(
-                        'CHANGE PROFILE PICTURE',
-                      ),
-                      style:
-                          OutlinedButton.styleFrom(
-                        foregroundColor:
-                            const Color(0xFF0A3323),
-                        side: const BorderSide(
-                          color: Color(0xFF0A3323),
-                        ),
-                        shape:
-                            RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
+            ],
+          );
+        },
       ),
     );
   }
