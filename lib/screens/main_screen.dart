@@ -24,7 +24,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWideLayout = MediaQuery.of(context).size.width >= 900;
     final destinations = const [
       NavigationDestination(
         icon: Icon(
@@ -86,48 +85,11 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
 
-    if (isWideLayout) {
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              backgroundColor: AppTheme.darkGreen,
-              selectedIndex: currentIndex,
-              onDestinationSelected: (index) {
-                setState(() {
-                  currentIndex = index;
-                });
-              },
-              indicatorColor: AppTheme.mossGreen,
-              labelType: NavigationRailLabelType.selected,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_outlined, color: AppTheme.beige),
-                  selectedIcon: Icon(Icons.home, color: AppTheme.darkGreen),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.assignment_outlined, color: AppTheme.beige),
-                  selectedIcon: Icon(Icons.assignment, color: AppTheme.darkGreen),
-                  label: Text('Reports'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline, color: AppTheme.beige),
-                  selectedIcon: Icon(Icons.person, color: AppTheme.darkGreen),
-                  label: Text('Profile'),
-                ),
-              ],
-            ),
-            Expanded(child: pageContent),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       body: pageContent,
       bottomNavigationBar: NavigationBar(
         backgroundColor: AppTheme.darkGreen,
+        height: 72,
         indicatorColor: AppTheme.mossGreen,
         selectedIndex: currentIndex,
         labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(

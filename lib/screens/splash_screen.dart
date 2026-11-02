@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -52,23 +53,21 @@ class _SplashScreenState extends State<SplashScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWideLayout = constraints.maxWidth >= 700;
+        final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
         final maxContentWidth = isWideLayout ? 540.0 : 420.0;
         final titleSize = isWideLayout ? 52.0 : 42.0;
 
         return Scaffold(
           body: Stack(
             children: [
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF0A3323),
-                      Color(0xFF105E43),
-                      Color(0xFF839958),
-                      Color(0xFFF7F4D5),
-                    ],
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/eco_cleanup_vertical.png'),
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                    ),
                   ),
                 ),
               ),
@@ -134,6 +133,48 @@ class _SplashScreenState extends State<SplashScreen>
                         size: 35,
                         phase: 7,
                       ),
+                      _floatingIcon(
+                        icon: Icons.cleaning_services,
+                        left: 80,
+                        top: 230,
+                        size: 31,
+                        phase: 8,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.delete_forever,
+                        right: 85,
+                        top: 280,
+                        size: 33,
+                        phase: 9,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.checklist_rtl,
+                        left: 150,
+                        bottom: 180,
+                        size: 29,
+                        phase: 10,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.forest,
+                        right: 150,
+                        bottom: 170,
+                        size: 30,
+                        phase: 11,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.auto_awesome,
+                        left: 200,
+                        top: 80,
+                        size: 28,
+                        phase: 12,
+                      ),
+                      _floatingIcon(
+                        icon: Icons.spa,
+                        right: 190,
+                        top: 90,
+                        size: 29,
+                        phase: 13,
+                      ),
                     ],
                   );
                 },
@@ -163,7 +204,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   height: isWideLayout ? 150 : 130,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: const Color(0xFFF7F4D5),
+                                    color: AppTheme.beige,
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withValues(alpha: 0.2),
@@ -175,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   child: const Icon(
                                     Icons.eco,
                                     size: 75,
-                                    color: Color(0xFF0A3323),
+                                    color: AppTheme.darkGreen,
                                   ),
                                 ),
                               );
@@ -188,7 +229,7 @@ class _SplashScreenState extends State<SplashScreen>
                               fontSize: titleSize,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 6,
-                              color: const Color(0xFFF7F4D5),
+                              color: AppTheme.darkGreen,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -198,8 +239,8 @@ class _SplashScreenState extends State<SplashScreen>
                             style: TextStyle(
                               fontSize: 18,
                               height: 1.5,
-                              color: Color(0xFFE8E8C7),
-                              fontWeight: FontWeight.w500,
+                              color: AppTheme.darkGreen,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 70),
@@ -210,9 +251,10 @@ class _SplashScreenState extends State<SplashScreen>
                           const Text(
                             'Report • Track • Clean',
                             style: TextStyle(
-                              color: Color(0xFFE8E8C7),
+                              color: AppTheme.darkGreen,
                               fontSize: 13,
                               letterSpacing: 2,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -225,6 +267,22 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildResponsiveBackground({
+    required bool isLandscape,
+    required double width,
+    required double height,
+  }) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/eco_cleanup_vertical.png'),
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+        ),
+      ),
     );
   }
 
@@ -245,12 +303,23 @@ class _SplashScreenState extends State<SplashScreen>
       right: right,
       top: top != null ? top + movement : null,
       bottom: bottom != null ? bottom + movement : null,
-      child: Opacity(
-        opacity: 0.55,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.beige.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Icon(
           icon,
-          size: size,
-          color: const Color(0xFFF7F4D5),
+          size: size + 6,
+          color: AppTheme.mossGreen,
+          shadows: [
+            Shadow(
+              color: AppTheme.mossGreen.withValues(alpha: 0.45),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
       ),
     );
@@ -289,10 +358,10 @@ class _SlideToStartState extends State<SlideToStart> {
           height: 68,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF0A3323).withValues(alpha: 0.65),
+            color: AppTheme.beige.withValues(alpha: 0.58),
             borderRadius: BorderRadius.circular(40),
             border: Border.all(
-              color: const Color(0xFFF7F4D5).withValues(alpha: 0.35),
+              color: AppTheme.darkGreen.withValues(alpha: 0.22),
             ),
           ),
           child: Stack(
@@ -302,7 +371,7 @@ class _SlideToStartState extends State<SlideToStart> {
                 child: Text(
                   'SLIDE TO GET STARTED  →',
                   style: TextStyle(
-                    color: const Color(0xFFF7F4D5).withValues(alpha: 0.9),
+                    color: AppTheme.darkGreen.withValues(alpha: 0.9),
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.3,
@@ -342,11 +411,11 @@ class _SlideToStartState extends State<SlideToStart> {
                     margin: const EdgeInsets.only(left: 5),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFFF7F4D5),
+                      color: AppTheme.darkGreen,
                     ),
                     child: const Icon(
                       Icons.arrow_forward,
-                      color: Color(0xFF0A3323),
+                      color: AppTheme.beige,
                       size: 27,
                     ),
                   ),

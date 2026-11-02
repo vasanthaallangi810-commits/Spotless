@@ -100,32 +100,28 @@ class _SpotlessBackgroundState
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: widget.dark
-                  ? const [
-                      AppTheme.darkGreen,
-                      AppTheme.midnightGreen,
-                    ]
-                  : const [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
                       AppTheme.beige,
                       Color(0xFFE9E7C8),
-                      Color(0xFFF7F4D5),
+                      AppTheme.beige,
                     ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-
-        AnimatedBuilder(
-          animation: controller,
-          builder: (context, _) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) {
                 return Stack(
                   children: objects.map((object) {
                     final wave = sin(
@@ -176,12 +172,11 @@ class _SpotlessBackgroundState
                   }).toList(),
                 );
               },
-            );
-          },
-        ),
-
-        widget.child,
-      ],
+            ),
+            widget.child,
+          ],
+        );
+      },
     );
   }
 
