@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.uid
+        && request.resource.data.keys().hasAll(['uid', 'userId', 'type', 'garbage_type', 'description', 'latitude', 'longitude', 'imagePath', 'imageUrl', 'status', 'createdAt', 'date']);
+
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.uid
+        && request.auth.uid == request.resource.data.uid;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+  }
+}

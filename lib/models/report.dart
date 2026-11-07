@@ -12,6 +12,9 @@ class Report {
   // Image data used by the Reports/Details screens
   final Uint8List? imageBytes;
 
+  // Cloud image URL used for persisted cross-device visibility.
+  final String? imageUrl;
+
   final String status;
   final DateTime date;
 
@@ -22,6 +25,7 @@ class Report {
     required this.longitude,
     required this.imagePath,
     this.imageBytes,
+    this.imageUrl,
     required this.status,
     required this.date,
   });

@@ -29,12 +29,15 @@ class DatabaseHelper {
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, fileName);
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
+
+    await _ensureReportsSchema(db);
+    return db;
   }
 
   // ============================================================
@@ -59,16 +62,60 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE reports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId INTEGER NOT NULL,
         type TEXT NOT NULL,
         description TEXT NOT NULL,
         latitude REAL NOT NULL,
         longitude REAL NOT NULL,
         imagePath TEXT,
+        imageUrl TEXT,
         imageBytes BLOB,
         status TEXT NOT NULL,
         date TEXT NOT NULL
       )
     ''');
+  }
+
+  Future<void> _ensureReportsSchema(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='reports'",
+    );
+
+    if (tables.isEmpty) {
+      await db.execute('''
+        CREATE TABLE reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId INTEGER NOT NULL,
+          type TEXT NOT NULL,
+          description TEXT NOT NULL,
+          latitude REAL NOT NULL,
+          longitude REAL NOT NULL,
+          imagePath TEXT,
+          imageUrl TEXT,
+          imageBytes BLOB,
+          status TEXT NOT NULL,
+          date TEXT NOT NULL
+        )
+      ''');
+      return;
+    }
+
+    final columns = await db.rawQuery(
+      "PRAGMA table_info(reports)",
+    );
+    final columnNames = columns.map((row) => row['name'] as String).toSet();
+
+    if (!columnNames.contains('userId')) {
+      await db.execute(
+        'ALTER TABLE reports ADD COLUMN userId INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    if (!columnNames.contains('imageUrl')) {
+      await db.execute(
+        'ALTER TABLE reports ADD COLUMN imageUrl TEXT',
+      );
+    }
   }
 
   // ============================================================
@@ -88,8 +135,46 @@ class DatabaseHelper {
           email TEXT NOT NULL UNIQUE,
           password TEXT NOT NULL
         )
-      ''');
+      ''' );
     }
+
+    if (oldVersion < 3) {
+      final existing = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='reports'",
+      );
+      if (existing.isEmpty) {
+        await db.execute('''
+          CREATE TABLE reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL,
+            imagePath TEXT,
+            imageUrl TEXT,
+            imageBytes BLOB,
+            status TEXT NOT NULL,
+            date TEXT NOT NULL
+          )
+        ''');
+      } else {
+        final columns = await db.rawQuery('PRAGMA table_info(reports)');
+        final names = columns.map((row) => row['name'] as String).toSet();
+        if (!names.contains('userId')) {
+          await db.execute(
+            'ALTER TABLE reports ADD COLUMN userId INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (!names.contains('imageUrl')) {
+          await db.execute(
+            'ALTER TABLE reports ADD COLUMN imageUrl TEXT',
+          );
+        }
+      }
+    }
+
+    await _ensureReportsSchema(db);
   }
 
   // ============================================================
@@ -163,11 +248,13 @@ class DatabaseHelper {
   // ============================================================
 
   Future<int> insertReport({
+    required int userId,
     required String type,
     required String description,
     required double latitude,
     required double longitude,
     String imagePath = '',
+    String? imageUrl,
     Uint8List? imageBytes,
     required String status,
     required DateTime date,
@@ -175,11 +262,13 @@ class DatabaseHelper {
     final db = await database;
 
     final data = {
+      'userId': userId,
       'type': type,
       'description': description,
       'latitude': latitude,
       'longitude': longitude,
       'imagePath': imagePath,
+      'imageUrl': imageUrl,
       'imageBytes': imageBytes,
       'status': status,
       'date': date.toIso8601String(),
@@ -195,11 +284,13 @@ class DatabaseHelper {
   // GET ALL REPORTS
   // ============================================================
 
-  Future<List<Report>> getReports() async {
+  Future<List<Report>> getReports({int? userId}) async {
     final db = await database;
 
     final result = await db.query(
       'reports',
+      where: userId == null ? null : 'userId = ?',
+      whereArgs: userId == null ? null : [userId],
       orderBy: 'date DESC',
     );
 
@@ -229,6 +320,7 @@ class DatabaseHelper {
         latitude: (map['latitude'] as num).toDouble(),
         longitude: (map['longitude'] as num).toDouble(),
         imagePath: (map['imagePath'] as String?) ?? '',
+        imageUrl: map['imageUrl'] as String?,
         imageBytes: map['imageBytes'] != null
             ? Uint8List.fromList(
                 (map['imageBytes'] as List<int>),

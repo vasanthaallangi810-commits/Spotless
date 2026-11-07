@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../data/app_data.dart';
 import '../services/api_service.dart';
+import '../services/report_sync_service.dart';
 import '../models/report.dart';
 import 'report_details_screen.dart';
 
@@ -38,32 +39,140 @@ class _ReportsScreenState extends State<ReportsScreen>
     super.dispose();
   }
 
+  String _normalizeComparisonText(String? value) {
+    return (value ?? '')
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  Report? _findLocalReportMatch(Map<String, dynamic> report) {
+    final reportType = report['garbage_type']?.toString() ??
+        report['type']?.toString() ??
+        '';
+    final reportDescription = report['description']?.toString() ?? '';
+    final reportDate = parseDate(report['created_at'] ?? report['date']);
+
+    for (final localReport in AppData.reports) {
+      final sameType = _normalizeComparisonText(localReport.type) ==
+          _normalizeComparisonText(reportType);
+      final sameDescription = _normalizeComparisonText(localReport.description) ==
+          _normalizeComparisonText(reportDescription);
+      final sameDate = localReport.date.year == reportDate.year &&
+          localReport.date.month == reportDate.month &&
+          localReport.date.day == reportDate.day;
+
+      if ((sameType && sameDescription) || (sameDescription && sameDate)) {
+        return localReport;
+      }
+
+      if (sameType && reportDescription.isEmpty && localReport.description.isEmpty) {
+        return localReport;
+      }
+    }
+
+    return null;
+  }
+
   Future<void> fetchReports() async {
     try {
       final userId = AppData.userId;
 
-if (userId == null) {
-  setState(() {
-    errorMessage = 'User session not found. Please login again.';
-    isLoading = false;
-  });
-  return;
-}
+      if (userId == null) {
+        setState(() {
+          errorMessage = 'User session not found. Please login again.';
+          isLoading = false;
+        });
+        return;
+      }
+
+      await AppData.loadSavedReports(forUserId: userId);
+
+      final cloudReports = await ReportSyncService.getReportsForUser(userId: userId);
+
+      if (!mounted) return;
+
+      if (cloudReports.isNotEmpty) {
+        final cloudMapped = cloudReports.map((report) {
+          return {
+            'garbage_type': report.type,
+            'description': report.description,
+            'latitude': report.latitude,
+            'longitude': report.longitude,
+            'status': report.status,
+            'created_at': report.date.toIso8601String(),
+            'image_url': report.imageUrl,
+          };
+        }).toList();
+
+        AppData.reports.clear();
+        AppData.reports.addAll(cloudReports);
+
+        setState(() {
+          reports = cloudMapped;
+          isLoading = false;
+          errorMessage = null;
+        });
+        return;
+      }
 
       final result = await ApiService.getMyReports(
         userId: userId,
       );
 
-      if (!mounted) return;
+      final apiReports = result['reports'] as List? ?? const [];
+
+      if (apiReports.isNotEmpty) {
+        setState(() {
+          reports = List<Map<String, dynamic>>.from(apiReports);
+          isLoading = false;
+        });
+        return;
+      }
+
+      if (AppData.reports.isNotEmpty) {
+        setState(() {
+          reports = AppData.reports.map((report) {
+            return {
+              'garbage_type': report.type,
+              'description': report.description,
+              'latitude': report.latitude,
+              'longitude': report.longitude,
+              'status': report.status,
+              'created_at': report.date.toIso8601String(),
+              'image_url': report.imageUrl,
+            };
+          }).toList();
+          isLoading = false;
+        });
+        return;
+      }
 
       setState(() {
-        reports = List<Map<String, dynamic>>.from(
-          result['reports'] ?? [],
-        );
+        reports = const [];
         isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
+
+      if (AppData.reports.isNotEmpty) {
+        setState(() {
+          reports = AppData.reports.map((report) {
+            return {
+              'garbage_type': report.type,
+              'description': report.description,
+              'latitude': report.latitude,
+              'longitude': report.longitude,
+              'status': report.status,
+              'created_at': report.date.toIso8601String(),
+              'image_url': report.imageUrl,
+            };
+          }).toList();
+          isLoading = false;
+          errorMessage = null;
+        });
+        return;
+      }
 
       setState(() {
         errorMessage = 'Unable to load reports. Please try again.';
@@ -83,15 +192,8 @@ if (userId == null) {
   }
 
   Widget buildReportImage(Map<String, dynamic> report) {
-    // Find the locally stored image bytes for this report.
-    // Reports loaded from the backend may not have image bytes.
-    final matchingReport = AppData.reports.cast<Report?>().firstWhere(
-      (localReport) =>
-          localReport != null &&
-          localReport.type == report['garbage_type'] &&
-          localReport.description == report['description'],
-      orElse: () => null,
-    );
+    final matchingReport = _findLocalReportMatch(report);
+    final imageUrl = (matchingReport?.imageUrl ?? report['image_url'])?.toString();
 
     if (matchingReport?.imageBytes != null) {
       return Image.memory(
@@ -99,6 +201,25 @@ if (userId == null) {
         width: 75,
         height: 75,
         fit: BoxFit.cover,
+      );
+    }
+
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        width: 75,
+        height: 75,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 75,
+          height: 75,
+          color: Colors.green.shade50,
+          child: Icon(
+            Icons.image_not_supported_outlined,
+            color: Colors.green.shade700,
+            size: 30,
+          ),
+        ),
       );
     }
 
@@ -115,13 +236,7 @@ if (userId == null) {
   }
 
   void openReportDetails(Map<String, dynamic> report) {
-    final matchingReport = AppData.reports.cast<Report?>().firstWhere(
-      (localReport) =>
-          localReport != null &&
-          localReport.type == report['garbage_type'] &&
-          localReport.description == report['description'],
-      orElse: () => null,
-    );
+    final matchingReport = _findLocalReportMatch(report);
 
     final reportDetails = Report(
       type: report['garbage_type']?.toString() ?? 'Unknown',
@@ -136,6 +251,7 @@ if (userId == null) {
           0.0,
       imagePath: matchingReport?.imagePath ?? '',
       imageBytes: matchingReport?.imageBytes,
+      imageUrl: (matchingReport?.imageUrl ?? report['image_url'])?.toString() ?? '',
       status: report['status']?.toString() ?? 'Pending',
       date: parseDate(report['created_at']),
     );

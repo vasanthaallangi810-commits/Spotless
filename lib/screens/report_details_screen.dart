@@ -1,5 +1,4 @@
 
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -46,6 +45,29 @@ class ReportDetailsScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 250,
                     fit: BoxFit.cover,
+                  ),
+                )
+              else if (report.imageUrl != null && report.imageUrl!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: Image.network(
+                    report.imageUrl!,
+                    width: double.infinity,
+                    height: 250,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 180,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5EBD9),
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        size: 75,
+                        color: Color(0xFF0A3323),
+                      ),
+                    ),
                   ),
                 )
               else

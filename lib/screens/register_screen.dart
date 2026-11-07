@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/app_data.dart';
 import '../theme/app_theme.dart';
@@ -59,6 +60,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
+      await AppData.clearSession();
+
       // Send user data to Node.js → MySQL
       final result = await ApiService.registerUser(
         name: name,
@@ -69,12 +72,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        // Save current user's name in the app
+        // Firebase is no longer required for the app to work.
+        // The backend MySQL server is the actual account system.
+        AppData.firebaseUid = null;
         AppData.userName = name;
+
+        final registeredUserId =
+            int.tryParse(result['userId']?.toString() ?? '') ?? 0;
+        AppData.userId = registeredUserId > 0 ? registeredUserId : null;
+
+        if (AppData.userId != null) {
+          await AppData.loadSavedReports(forUserId: AppData.userId!);
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('user_id', AppData.userId ?? 0);
+        await prefs.setString('user_name', name);
+        await prefs.setString('user_email', email);
+        if (AppData.firebaseUid != null) {
+          await prefs.setString('firebase_uid', AppData.firebaseUid!);
+        }
 
         _showMessage('Account created successfully! 🌱');
 
-        // Go to main screen
+        if (!mounted) return;
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -176,8 +198,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           suffixIcon: IconButton(
                             icon: Icon(
                               obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                             ),
                             onPressed: () {
                               setState(() {

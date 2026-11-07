@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/app_data.dart';
 import '../services/api_service.dart';
+import '../services/report_sync_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/spotless_background.dart';
 import 'main_screen.dart';
@@ -50,6 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      await AppData.clearSession();
+
       final result = await ApiService.login(
         email: email,
         password: password,
@@ -60,16 +63,32 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
+        // The app now uses the backend MySQL login as the real source of auth.
+        // Firebase is no longer required for login.
+        AppData.firebaseUid = null;
+
         // Save logged-in user's information
-        AppData.userId = result['userId'];
+        final loggedInUserId = int.tryParse(result['userId']?.toString() ?? '') ?? 0;
+        AppData.userId = loggedInUserId > 0 ? loggedInUserId : null;
         AppData.userName = result['name'] ?? '';
+        if (AppData.userId != null) {
+          await AppData.loadSavedReports(forUserId: AppData.userId!);
+        }
+
+        final cloudReports = await ReportSyncService.getReportsForUser(
+          userId: result['userId'],
+        );
+        if (cloudReports.isNotEmpty) {
+          AppData.reports.clear();
+          AppData.reports.addAll(cloudReports);
+        }
 
         // Save user session permanently
         final prefs = await SharedPreferences.getInstance();
 
         await prefs.setInt(
           'user_id',
-          result['userId'],
+          AppData.userId ?? 0,
         );
 
         await prefs.setString(
@@ -81,6 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
           'user_email',
           result['email'] ?? email,
         );
+
+        if (AppData.firebaseUid != null) {
+          await prefs.setString('firebase_uid', AppData.firebaseUid!);
+        }
 
         print("USER ID SAVED: ${result['userId']}");
 
@@ -205,8 +228,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       obscurePassword
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                     ),
                                     onPressed: () {
                                       setState(() {

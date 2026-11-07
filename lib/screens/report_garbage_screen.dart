@@ -7,8 +7,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../data/app_data.dart';
+import '../database/database_helper.dart';
 import '../models/report.dart';
 import '../services/api_service.dart';
+import '../services/report_sync_service.dart';
 
 class ReportGarbageScreen extends StatefulWidget {
   const ReportGarbageScreen({super.key});
@@ -210,29 +212,54 @@ class _ReportGarbageScreenState
 
       debugPrint('API RESPONSE: $result');
 
-      if (result['success'] == true) {
-        // Keep local AppData updated for the current UI
-        Uint8List? imageBytes;
+      Uint8List? imageBytes;
 
-        if (selectedImage != null) {
-          imageBytes =
-              await selectedImage!.readAsBytes();
-        }
+      if (selectedImage != null) {
+        imageBytes = await selectedImage!.readAsBytes();
+      }
 
-        final report = Report(
-          type: selectedType,
-          description:
-              descriptionController.text.trim(),
-          latitude: selectedLocation.latitude,
-          longitude: selectedLocation.longitude,
-          imagePath: imagePath,
+      String? imageUrl;
+      if (imageBytes != null) {
+        imageUrl = await ReportSyncService.uploadReportImage(
+          userId: userId,
+          reportType: selectedType,
           imageBytes: imageBytes,
-          status: 'Pending',
-          date: DateTime.now(),
         );
+      }
 
-        AppData.reports.add(report);
+      final report = Report(
+        type: selectedType,
+        description: descriptionController.text.trim(),
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        imagePath: imagePath,
+        imageBytes: imageBytes,
+        imageUrl: imageUrl,
+        status: 'Pending',
+        date: DateTime.now(),
+      );
 
+      AppData.reports.add(report);
+      await DatabaseHelper.instance.insertReport(
+        userId: userId,
+        type: selectedType,
+        description: descriptionController.text.trim(),
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        imagePath: imagePath,
+        imageUrl: imageUrl,
+        imageBytes: imageBytes,
+        status: 'Pending',
+        date: DateTime.now(),
+      );
+
+      await ReportSyncService.saveReportToCloud(
+        userId: userId,
+        report: report,
+        imageUrl: imageUrl,
+      );
+
+      if (result['success'] == true) {
         _showMessage(
           'Report submitted successfully! 🌿',
         );
@@ -247,7 +274,7 @@ class _ReportGarbageScreenState
       } else {
         _showMessage(
           result['message'] ??
-              'Report submission failed.',
+              'Report submitted locally. Server sync may still be pending.',
         );
       }
     } catch (e) {
